@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+    <style>
+        body {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+<img id="ii" src="aa.svg">
+<script>
+    const imgEl = document.getElementById("ii")
+    let count = 1
+    let delta = 1
+    const update = () => {
+        imgEl.src = `output-${count}.svg`
+        if(count + delta > 30) delta = -1
+        else if(count + delta < 0) delta = 1
+        count += delta
+        setTimeout(() => {update()}, 200)
+    }
+    update()
+</script>
+</body>
+</html>
