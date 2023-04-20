@@ -44,7 +44,7 @@ def log(s):
 
 
 class ContourGenerator:
-    def __init__(self, thresh=100, threshMaxVal=255, fillColor=0, strokeColorRGBA=(0, 255, 255, 255), transparent=True,
+    def __init__(self, thresh=100, threshMaxVal=255, fillColor=0, strokeColorRGBA=(0, 255, 255, 255),
                  maxProcesses=None):
         """
         初始化配置
@@ -59,7 +59,7 @@ class ContourGenerator:
         self.threshMaxVal = threshMaxVal
         self.fillColor = fillColor
         self.strokeColorRGBA = strokeColorRGBA
-        self.transparent = transparent
+        self.transparent = True if self.fillColor == 0 else False
         self.maxProcesses = maxProcesses if maxProcesses else os.cpu_count()
         pass
 
@@ -153,21 +153,15 @@ class ContourGenerator:
         ret, imgThreshed = cv2.threshold(imgGary, self.thresh, self.threshMaxVal, cv2.THRESH_BINARY)
         # 获取边界数据
         contours, hierarchy = cv2.findContours(imgThreshed, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        # 创建空白背景
-        imgEmpty = np.zeros(img.shape[:2], np.uint8)
+        # 创建背景（设置为空白背景时创建4通道）
+        channels = 4 if self.transparent else 3
+        imgEmpty = np.zeros((*img.shape[:2], channels), np.uint8)
+        # 0即使填充也不影响
         imgEmpty.fill(self.fillColor)
         # 图像颜色模式转换
         imgEmpty = cv2.cvtColor(imgEmpty, cv2.COLOR_BGR2RGBA)
         # 绘制边界
         imgThreshedAndContoured = cv2.drawContours(imgEmpty, contours, -1, self.strokeColorRGBA, 1)
-        # 清除非边界数据(alpha通道置0)
-        if self.transparent:
-            for row in imgThreshedAndContoured:
-                for index, pixel in enumerate(row):
-                    r, g, b, a = pixel
-                    # 判定填充区域，清除填充区域
-                    if r == self.fillColor and g == self.fillColor and b == self.fillColor:
-                        row[index] = [0, 0, 0, 0]
 
         return imgThreshedAndContoured
 
