@@ -52,7 +52,6 @@ class ContourGenerator:
         :param threshMaxVal: 用于二值化处理cv2.threshold的参数maxval
         :param fillColor: 生成图的填充色
         :param strokeColorRGBA: 线条填充色
-        :param transparent: 是否背景透明
         :param maxProcesses: 处理时的最大进程数
         """
         self.thresh = thresh
