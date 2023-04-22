@@ -20,11 +20,11 @@ def decCountTimeConsume(func):
     计时装饰器
     """
 
-    def inner(*args):
+    def inner(*args, **kwargs):
         print(f"{datetime.datetime.today()} | {func.__name__}开始执行")
         log(f"{datetime.datetime.today()} | {func.__name__}开始执行")
         startTime = time.time()
-        func(*args)
+        func(*args, **kwargs)
         endTime = time.time()
         timeConsumed = endTime - startTime
         print(f"{datetime.datetime.today()} | {func.__name__}执行结束，共耗时{timeConsumed}秒")
