@@ -63,12 +63,12 @@ class ContourGenerator:
         pass
 
     @decCountTimeConsume
-    def generateFromVideo(self, videoPath="./videos/SampleVideo_1280x720_1mb.mp4", outputDir=None,
-                          generateAbstractData=None):
+    def generateFromVideo(self, videoPath, outputDir=None, extension=".svg", generateAbstractData=None):
         """
         从视频文件生成，逐帧读取，使用多进程
         :param videoPath: 视频路径
         :param outputDir: 视频类的转换会输出到文件夹
+        :param extension: 指定输出文件类型（默认.svg）
         :param generateAbstractData: 是否生成数据内容清单
         :return: None
         """
@@ -92,7 +92,7 @@ class ContourGenerator:
                 cap.release()
                 break
             else:
-                processPool.apply_async(self.generateFromImage, (None, frame, f"{count + 1}.svg", outputDir))
+                processPool.apply_async(self.generateFromImage, (None, frame, f"{count + 1}", outputDir, extension))
                 count += 1
         processPool.close()
         processPool.join()
@@ -102,17 +102,20 @@ class ContourGenerator:
                 f.write(json.dumps({"total": count + 1}, indent=4))
         pass
 
-    def generateFromImage(self, imgPath="./images/totoro.png", img=None, outputFileName=None, outputDir=None):
+    def generateFromImage(self, imgPath=None, img=None, outputFileName=None, outputDir=None, extension=".svg"):
         """
         从图片生成
         :param imgPath: 图片路径
         :param img: 图片数据
         :param outputFileName: 输出文件名
         :param outputDir: 输出文件夹
+        :param extension: 指定输出文件类型（默认.svg）
         :return: None
         """
+        if imgPath is None and img is None:
+            return
         contouredData = self.__generateContouredData(imgPath, img=img)
-        plt.imsave(self.__getOutputPath(imgPath, outputFileName, outputDir), contouredData)
+        plt.imsave(self.__getOutputPath(imgPath, outputFileName, outputDir, extension), contouredData)
         pass
 
     @staticmethod
@@ -131,9 +134,8 @@ class ContourGenerator:
             filename = outputFileName
         else:
             filename = os.path.basename(filePath)
-            if extension:
-                filename = re.sub(r"\.\w+", extension, filename)
-        return os.path.join(dirname, filename)
+            filename = re.sub(r"\.\w+$", "", filename)
+        return os.path.join(dirname, f"{filename}{extension}")
         pass
 
     def __generateContouredData(self, imgPath=None, img=None):
@@ -167,8 +169,8 @@ class ContourGenerator:
 
 if __name__ == "__main__":
     cg = ContourGenerator()
-    cg.generateFromVideo()
-    # lg.generateFromImage()
+    cg.generateFromVideo("./videos/SampleVideo_1280x720_1mb.mp4")
+    # cg.generateFromImage("./images/totoro.png")
     # print(os.path.dirname("./images/totoro.png"))
     # ContourGenerator().generateFromImage()
     pass
