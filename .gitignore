@@ -1,5 +1,7 @@
 # Log files
 log
+/*.mp4
+/*.mkv
 
 # Editor directories and files
 .idea
