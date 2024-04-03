@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>图片处理测试</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            padding: 0 1rem;
+            box-sizing: border-box;
+        }
+
+        #app > * {
+            padding: 1rem 0 0;
+            box-sizing: border-box;
+        }
+
+        #controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #controls > div {
+            display: flex;
+            align-items: center;
+        }
+
+        #controls > div > label {
+            margin-right: 12px;
+        }
+
+        #splitter {
+            width: 100%;
+            height: 0;
+            border-bottom: 1px dashed #999;
+        }
+
+        #render > img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="controls">
+        <div>
+            <label for="threshold">threshold</label>
+            <input id="threshold" type="number" title="0-255，浅色图像可以调高点，反之同理" min="0" max="255" v-model="inputValue">
+        </div>
+        <div>
+            <label for="instantCheck">立即重绘</label>
+            <input id="instantCheck" type="checkbox" v-model="instantCheck">
+        </div>
+        <div>
+            <button @click="syncControls">点击渲染</button>
+        </div>
+    </div>
+    <div id="splitter"></div>
+    <div id="render">
+        <img v-if="renderImgPath" :src="renderImgPath" :alt="renderImgPath">
+        <span v-else>暂无内容</span>
+    </div>
+</div>
+<script src="./vue.min.js"></script>
+<script type="module">
+    const {ref, watch} = Vue
+    Vue.createApp({
+        setup() {
+            const inputValue = ref(100)
+            watch(() => inputValue.value, v => {
+                if (v > 255) inputValue.value = 255
+                else if (v < 0) inputValue.value = 0
+            })
+
+            const renderImgPath = ref("")
+            const instantCheck = ref(false)
+
+            return {
+                inputValue,
+                renderImgPath
+            }
+        },
+        methods: {
+            syncControls() {
+                window.pywebview.api.syncControls(this.inputValue).then(imgPath => {
+                    if (imgPath) this.renderImgPath = imgPath
+                })
+            }
+        }
+    }).mount("#app")
+</script>
+</body>
+</html>
