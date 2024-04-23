@@ -31,7 +31,15 @@
             align-items: center;
         }
 
-        #controls > div > label {
+        #controls > div:not(:last-child) {
+            margin-right: 12px;
+        }
+
+         #controls > div:nth-child(2){
+             flex-grow: 1;
+         }
+
+        #controls > div > *:not(:last-child) {
             margin-right: 12px;
         }
 
@@ -44,6 +52,10 @@
         #render > img {
             max-width: 100%;
         }
+
+        input[type="number"] {
+            max-width: 88px;
+        }
     </style>
 </head>
 <body>
@@ -51,11 +63,13 @@
     <div id="controls">
         <div>
             <label for="threshold">threshold</label>
+            <input type="range" min="0" max="255" v-model="inputValue">
             <input id="threshold" type="number" title="0-255，浅色图像可以调高点，反之同理" min="0" max="255" v-model="inputValue">
         </div>
         <div>
-            <label for="instantCheck">立即重绘</label>
-            <input id="instantCheck" type="checkbox" v-model="instantCheck">
+            <label for="renderDelay">重绘延迟</label>
+            <input id="renderDelay" type="number" min="0" v-model="renderDelay" title="render delay" placeholder="重绘延迟">
+            <progress v-if="processing"></progress>
         </div>
         <div>
             <button @click="syncControls">点击渲染</button>
@@ -73,25 +87,43 @@
     Vue.createApp({
         setup() {
             const inputValue = ref(100)
+            const renderDelay = ref(100)
+
             watch(() => inputValue.value, v => {
+                console.log(typeof v)
                 if (v > 255) inputValue.value = 255
                 else if (v < 0) inputValue.value = 0
+                syncControls()
+            })
+
+            watch(() => renderDelay.value, v => {
+                if(typeof renderDelay.value === "string") renderDelay.value = parseInt(v)
             })
 
             const renderImgPath = ref("")
-            const instantCheck = ref(false)
+            const processing = ref(false)
 
+            // 渲染延迟ms
+            const tid = ref(0)
+            const syncControls = () => {
+                tid.value && clearTimeout(tid.value)
+                tid.value = setTimeout(() => {
+                    processing.value = true
+                    window.pywebview.api.syncControls(inputValue.value).then(imgPath => {
+                        if (imgPath) renderImgPath.value = imgPath
+                        processing.value = false
+                    })
+                }, renderDelay.value)
+            }
             return {
                 inputValue,
-                renderImgPath
+                renderImgPath,
+                renderDelay,
+                processing,
+                syncControls
             }
         },
         methods: {
-            syncControls() {
-                window.pywebview.api.syncControls(this.inputValue).then(imgPath => {
-                    if (imgPath) this.renderImgPath = imgPath
-                })
-            }
         }
     }).mount("#app")
 </script>

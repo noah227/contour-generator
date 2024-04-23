@@ -13,8 +13,12 @@ import time
 class JsApi:
     def syncControls(self, threshold=100):
         print("SYNC", threshold)
+        threshold = int(threshold)
+        ContourGenerator(thresh=threshold).generateFromImage(imgPath="./totoro.png")
+        return "./totoro.svg" + f"?t={time.time()}"
         ContourGenerator(thresh=threshold).generateFromImage(imgPath="./110901.jpg")
         return "./110901.svg" + f"?t={time.time()}"
+
 
 
 if __name__ == '__main__':
