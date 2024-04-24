@@ -30,6 +30,9 @@
             display: flex;
             align-items: center;
         }
+         #controls > div * {
+             white-space: nowrap;
+         }
 
         #controls > div:not(:last-child) {
             margin-right: 12px;
@@ -56,6 +59,10 @@
         input[type="number"] {
             max-width: 88px;
         }
+
+        button {
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -63,16 +70,18 @@
     <div id="controls">
         <div>
             <label for="threshold">threshold</label>
-            <input type="range" min="0" max="255" v-model="inputValue">
+            <input type="range" min="0" max="255" v-model="inputValue" @mousewheel.stop.prevent="wheelRange">
             <input id="threshold" type="number" title="0-255，浅色图像可以调高点，反之同理" min="0" max="255" v-model="inputValue">
         </div>
         <div>
             <label for="renderDelay">重绘延迟</label>
             <input id="renderDelay" type="number" min="0" v-model="renderDelay" title="render delay" placeholder="重绘延迟">
-            <progress v-if="processing"></progress>
+            <progress v-show="processing"></progress>
         </div>
         <div>
+            <button @click="selectImage">选择图片</button>
             <button @click="syncControls">点击渲染</button>
+            <button @click="saveImage">保存图片</button>
         </div>
     </div>
     <div id="splitter"></div>
@@ -97,30 +106,81 @@
             })
 
             watch(() => renderDelay.value, v => {
-                if(typeof renderDelay.value === "string") renderDelay.value = parseInt(v)
+                if (typeof renderDelay.value === "string") renderDelay.value = parseInt(v)
             })
 
             const renderImgPath = ref("")
             const processing = ref(false)
+            const showProcessingBar = ref(false)
+            const processingTid = ref(0)
+            watch(processing.value, v => {
+                processingTid.value && clearTimeout(processingTid.value)
+                if(!v) return
+                // 处理时间少的就不用展示进度条了
+                processingTid.value = setTimeout(() => {
+                    showProcessingBar.value = true
+                }, 600)
+            })
 
             // 渲染延迟ms
             const tid = ref(0)
-            const syncControls = () => {
+            const delayExecution = (action, delay) => {
                 tid.value && clearTimeout(tid.value)
-                tid.value = setTimeout(() => {
-                    processing.value = true
-                    window.pywebview.api.syncControls(inputValue.value).then(imgPath => {
+                tid.value = setTimeout(action, delay)
+            }
+            const communicate = ({data, cb, delay = 0, actionBefore}) => {
+                delayExecution(() => {
+                    actionBefore && actionBefore()
+                    window.pywebview.api.syncControls(data).then((...args) => {
+                        cb && cb(...args)
+                    })
+                }, delay)
+            }
+            const syncControls = () => {
+                processing.value = true
+                communicate({
+                    data: {action: "update", threshold: inputValue.value},
+                    actionBefore() {
+                        processing.value = true
+                    },
+                    cb: imgPath => {
                         if (imgPath) renderImgPath.value = imgPath
                         processing.value = false
-                    })
-                }, renderDelay.value)
+                    },
+                    delay: renderDelay.value
+                })
+            }
+            const selectImage = () => {
+                communicate({
+                    data: {action: "select"},
+                    cb: imgPath => {
+                        if (imgPath) renderImgPath.value = imgPath
+                    },
+                    delay: renderDelay.value
+                })
+            }
+            const saveImage = () => {
+                communicate({
+                    data: {action: "save-single"},
+                    cb() {
+                        alert("已保存")
+                    }
+                })
             }
             return {
                 inputValue,
                 renderImgPath,
                 renderDelay,
                 processing,
-                syncControls
+                syncControls,
+                selectImage,
+                wheelRange(e) {
+                    let nextValue = parseInt(inputValue.value) + 5 * (e.deltaY < 0 ? 1 : -1)
+                    if (nextValue > 255) nextValue = 255
+                    else if (nextValue < 0) nextValue = 0
+                    inputValue.value = nextValue
+                },
+                saveImage
             }
         },
         methods: {
