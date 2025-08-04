@@ -9,6 +9,10 @@
 * []()
 * []()
 
+## 相关资料
+
+* [CuPy Installation](https://docs.cupy.dev/en/latest/install.html)
+
 ## todo
 
 - [ ] 可视化预览调整
@@ -24,5 +28,8 @@
     * png
 - [x] 支持填充色的配置
 - [x] 支持线条色的配置
+- [ ] cuda加速
+    * cupy加速方案
+        * 显卡似乎不能跨驱动版本安装cuda-toolkit，也就导致了python依赖里只安装一个版本的cupy是不可行的
 - [ ] 加注释
     * 在没忘记之前加注释
